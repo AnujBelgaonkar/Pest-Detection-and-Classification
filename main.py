@@ -1,21 +1,29 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-import tensorflow as tf
-from tensorflow import keras
-from keras.models import Model
+#import tensorflow as tf
+#from tensorflow import keras
+#from keras.models import Model
 from resources import get_model,load_llm
 from langchain.llms import Ollama
 import streamlit_scrollable_textbox as stx
 import os
 import replicate
-os.environ["REPLICATE_API_TOKEN"] = "r8_LRIAsFowWQXDAJOL4AJQo8pLEejhrvi0yDPqY"
-path = r"C:\Users\ANUJ BELGAONKAR\Desktop\Pest Detection and Classification\model\model.weights.h5"
+from dotenv import load_dotenv,find_dotenv
+
+
+load_dotenv(find_dotenv())
+
+
+
+os.environ["REPLICATE_API_TOKEN"] =os.getenv("REPLICATE_API_TOKEN") 
+path = r"model.weights.h5"
 
 def prompt(text,pre_prompt,api : bool):
     if api == True:
         output = replicate.run(
             "meta/llama-2-7b",
+            
             input = {
                 "prompt": text,
                 "system_prompt" : "You are an assistant not an enviromentalist answer as asked.",
@@ -59,8 +67,6 @@ with image_column:
         st.image(image)
         img_array = preprocess(image)
         
-         
-
 with prediction_column:
     st.header("Prediction")
     if img_array is not None:
