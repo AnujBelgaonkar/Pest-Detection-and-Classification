@@ -12,12 +12,13 @@ path = r"model.weights.h5"
 
 def prompt(text):
     output = together.Complete.create(
-    prompt="[INST] Tell me some fun things to do in NYC [/INST]",
+    prompt=f"[INST] {text}[/INST]",
     model="OPENCHAT/OPENCHAT-3.5-1210",
     max_tokens = 500,
-    temperature = 0.8,
+    temperature = 0.2,
     )
-    return output
+    response = output['choices'][0]['text']
+    return response
 
 def preprocess(image) -> np:
     image = image.resize((224,224))
