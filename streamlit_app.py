@@ -10,7 +10,7 @@ from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 load_dotenv(find_dotenv())
 
-os.environ["TOGETHER_API_KEY"] =os.getenv("TOGETHER_API_KEY") 
+os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
 
 path = r"model.weights.h5"
 
