@@ -9,8 +9,10 @@ from tensorflow.keras.layers import RandomRotation,RandomFlip,RandomZoom,RandomC
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import activations
 from tensorflow.keras import regularizers
+import streamlit as st
 
-#@st.cache_resource
+
+@st.cache_resource
 def get_model() -> Model:
     input_shape = [224,224,3]
     inputs = tf.keras.Input(shape=input_shape)
