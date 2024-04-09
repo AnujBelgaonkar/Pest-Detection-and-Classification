@@ -18,9 +18,11 @@ path = r"model.weights.h5"
 @st.cache_resource
 def get_llm():
     llm = Together(
-        model="OPENCHAT/OPENCHAT-3.5-1210",
-        max_tokens=1500,
-        temperature=0.7
+        model="META-LLAMA/LLAMA-2-7B-CHAT-HF",
+        max_tokens=700,
+        temperature=0.6,
+        top_p= 0.15
+
     )
     return llm
 
