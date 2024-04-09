@@ -1,83 +1,77 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-#import tensorflow as tf
-#from tensorflow import keras
-#from keras.models import Model
-from resources import get_model,load_llm
-from langchain.llms import Ollama
+from resources import get_model
 import streamlit_scrollable_textbox as stx
 import os
-import replicate
 from dotenv import load_dotenv,find_dotenv
-
-
+import together
 load_dotenv(find_dotenv())
-
-
-
-os.environ["REPLICATE_API_TOKEN"] =os.getenv("REPLICATE_API_TOKEN") 
+together.api_key = os.getenv("TOGETHER_API_KEY")
 path = r"model.weights.h5"
 
-def prompt(text,pre_prompt,api : bool):
-    if api == True:
-        output = replicate.run(
-            "meta/llama-2-7b",
-            
-            input = {
-                "prompt": text,
-                "system_prompt" : "You are an assistant not an enviromentalist answer as asked.",
-                "max_new_tokens" : 500
-            })
-        return ''.join(output)
-    else:
-        local_llm = load_llm()
-        return local_llm(text)
-    
+def prompt(text):
+    output = together.Complete.create(
+    prompt="[INST] Tell me some fun things to do in NYC [/INST]",
+    model="OPENCHAT/OPENCHAT-3.5-1210",
+    max_tokens = 500,
+    temperature = 0.8,
+    )
+    return output
 
 def preprocess(image) -> np:
     image = image.resize((224,224))
     img_array = np.asarray(image)
     img_array = img_array/255.0
     img_array = np.expand_dims(img_array, axis=0)
-    return img_array    
+    return img_array  
 
-model = get_model()
-model.load_weights(path)
-img_array = None
-names = {0 : 'Ants', 1 : 'Bees', 2:'Bettle',3:'Cattterpillar',4:'Earthworms',
-         5:'Earwig',6:'Grasshopper', 7:'Moth',8:'Slug',9:'Snail',10:'Wasp',11:'Weevil'}
+st.set_page_config(layout='wide')
 
+def main():
 
-header = st.container()
-image_column,prediction_column = st.columns(2,gap = 'large')
-
-with header:
-    st.title("  Pest Detection Web App  ")
-
-with st.sidebar:
-    records = st.container()
-    
+    model = get_model()
+    model.load_weights(path)
+    img_array = None
+    names = {0 : 'Ants', 1 : 'Bees', 2:'Bettle',3:'Cattterpillar',4:'Earthworms',
+            5:'Earwig',6:'Grasshopper', 7:'Moth',8:'Slug',9:'Snail',10:'Wasp',11:'Weevil'}
 
 
-with image_column:
-    upload = st.file_uploader("Upload Image", type = ['png','jpg'])
-    if upload is not None:
-        image = Image.open(upload)
-        st.image(image)
-        img_array = preprocess(image)
+    header = st.container()
+    image_column,prediction_column = st.columns(2,gap = 'large')
+
+    with header:
+        st.title("  Pest Detection Web App  ")
+
+    with st.sidebar:
+        records = st.container()
         
-with prediction_column:
-    st.header("Prediction")
-    if img_array is not None:
-        x = model.predict(img_array)
-        result = np.argmax(x)
-        pest = names.get(result)
-        st.text(f"The predicted pest is {pest}")
-        pre_prompt = "You are a helpful assistant. Give precise answers."
-        text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer +"
-        query = prompt(text,pre_prompt,False)
-        #answer = response(query)
-        stx.scrollableTextbox(text = query, height = 400, border = True)
 
 
+    with image_column:
+        upload = st.file_uploader("Upload Image", type = ['png','jpg'])
+        if upload is not None:
+            image = Image.open(upload)
+            st.image(image)
+            img_array = preprocess(image)
+            
+    with prediction_column:
+        st.header("Prediction")
+        if img_array is not None:
+            x = model.predict(img_array)
+            result = np.argmax(x)
+            pest = names.get(result)
+            st.text(f"The predicted pest is {pest}")
+            text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use"
+            query = prompt(text)
+            #answer = response(query)
+            stx.scrollableTextbox(text = query, height = 400, border = True)
+
+if __name__=="__main__": 
+    main() 
+
+
+
+
+
+    
