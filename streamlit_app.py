@@ -7,22 +7,27 @@ from PIL import Image
 from resources import get_model
 import streamlit_scrollable_textbox as stx
 from dotenv import load_dotenv, find_dotenv
-from datetime import datetime
+from langchain_together import Together
 load_dotenv(find_dotenv())
 
 os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
+#os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
 path = r"model.weights.h5"
 
-def prompt(text):
-    output = together.Complete.create(
-        prompt=text,
+@st.cache_resource
+def get_llm():
+    llm = Together(
         model="OPENCHAT/OPENCHAT-3.5-1210",
-        max_tokens=500,
-        temperature=0.5,
+        max_tokens=1500,
+        temperature=0.7
     )
-    response = output["output"]["choices"][0]
-    return response
+    return llm
+
+def prompt(text):
+    llm = get_llm()
+    output = llm.invoke(text)
+    return output
 
 def preprocess(image) -> np:
     image = image.resize((224, 224))
@@ -74,7 +79,8 @@ def main():
                 st.text(f"The predicted pest is {pest}")
                 text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use"
                 query = prompt(text)
-                stx.scrollableTextbox(text=query["text"], height=400, border=True)
+               # st.write(query)
+                stx.scrollableTextbox(text=query, height=400, border=True)
 
     with st.sidebar:
         records = st.container()
