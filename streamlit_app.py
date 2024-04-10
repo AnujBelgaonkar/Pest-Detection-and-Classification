@@ -10,10 +10,19 @@ from dotenv import load_dotenv, find_dotenv
 from langchain_together import Together
 load_dotenv(find_dotenv())
 
+def init_session_state():
+    if 'data' not in st.session_state:
+        st.session_state.data = []
+    if 'counter' not in st.session_state:
+        st.session_state.counter = 1
+
 os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
 #os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
 path = r"model.weights.h5"
+def add_data(data):
+    st.session_state.data.append((st.session_state.counter, data))
+    st.session_state.counter += 1
 
 @st.cache_resource
 def get_llm():
@@ -41,7 +50,7 @@ def preprocess(image) -> np:
 st.set_page_config(layout='wide')
 
 def main():
-
+    init_session_state()
     model = get_model()
     model.load_weights(path)
     img_array = None
@@ -78,14 +87,17 @@ def main():
                 x = model.predict(img_array)
                 result = np.argmax(x)
                 pest = names.get(result)
+                add_data(pest)
                 st.text(f"The predicted pest is {pest}")
                 text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use"
                 query = prompt(text)
                # st.write(query)
                 stx.scrollableTextbox(text=query, height=400, border=True)
 
-    with st.sidebar:
-        records = st.container()
+    st.sidebar.title("Records")
+    for idx, data in st.session_state.data:
+        st.sidebar.markdown(f"<h3>{idx}: {data}</h3>", unsafe_allow_html=True)
+            
 
 if __name__ == "__main__": 
     main()
