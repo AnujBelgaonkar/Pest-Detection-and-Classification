@@ -55,7 +55,8 @@ def main():
     model.load_weights(path)
     img_array = None
     names = {0: 'Ants', 1: 'Bees', 2: 'Bettle', 3: 'Cattterpillar', 4: 'Earthworms',
-             5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'}
+             5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'
+             }
 
     header = st.container()
     image_column, empty ,prediction_column = st.columns((2,1,2), gap='large')
@@ -63,13 +64,13 @@ def main():
     button = st.container()
     with header:
         st.write(
-            """
-            <div style="display: flex; justify-content: center;">
-                <h1>Pest Detection Web App</h1>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    """
+    <div style="display: flex; justify-content: center;">
+        <h1>🐌 Pest Detection Web App 🌱</h1>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
     with image_column:
         upload = st.file_uploader("Upload Image", type=['png', 'jpg'])
