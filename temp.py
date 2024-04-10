@@ -11,8 +11,8 @@ from langchain_together import Together
 
 load_dotenv(find_dotenv())
 
-#os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
-os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
+os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
+#os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
 def init_session_state():
     if 'data' not in st.session_state:
