@@ -16,8 +16,8 @@ def init_session_state():
     if 'counter' not in st.session_state:
         st.session_state.counter = 1
 
-#os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
-os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
+os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
+#os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
 path = r"model.weights.h5"
 def add_data(data):
