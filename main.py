@@ -8,7 +8,11 @@ from resources import get_model
 import streamlit_scrollable_textbox as stx
 from dotenv import load_dotenv, find_dotenv
 from langchain_together import Together
+
 load_dotenv(find_dotenv())
+
+#os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
+os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
 def init_session_state():
     if 'data' not in st.session_state:
@@ -16,10 +20,8 @@ def init_session_state():
     if 'counter' not in st.session_state:
         st.session_state.counter = 1
 
-#os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
-os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
-
 path = r"model.weights.h5"
+
 def add_data(data):
     st.session_state.data.append((st.session_state.counter, data))
     st.session_state.counter += 1
@@ -28,10 +30,9 @@ def add_data(data):
 def get_llm():
     llm = Together(
         model="META-LLAMA/LLAMA-2-7B-CHAT-HF",
-        max_tokens=900,
+        max_tokens=700,
         temperature=0.6,
         top_p= 0.15
-
     )
     return llm
 
@@ -58,9 +59,9 @@ def main():
              5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'}
 
     header = st.container()
-    image_column, empty ,prediction_column = st.columns((2,1,2), gap='large')
+    image_column, prediction_column = st.columns(2, gap='large')
     predict = st.container()
-    button = st.container()
+
     with header:
         st.write(
             """
@@ -77,13 +78,14 @@ def main():
             image = Image.open(upload)
             st.image(image)
             img_array = preprocess(image)
-        with predict:
-            st.write("<br>", unsafe_allow_html=True)  # Add some space above the button
-            with button:
-                 pressed = st.button("Predict", key='predict', use_container_width=False)
-    with empty:
-        ##fill space
-        st.write("     ")
+        
+    with predict:
+        st.write("<br>", unsafe_allow_html=True)  # Add some space above the button
+        button_container = st.container()
+        with button_container:
+            st.markdown("<br>", unsafe_allow_html=True)  # Add some space above the button
+            pressed = st.button("Predict", key='predict', use_container_width=False)
+
             
     with prediction_column:
         st.header("Prediction")
@@ -97,7 +99,7 @@ def main():
                 text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use"
                 query = prompt(text)
                # st.write(query)
-                stx.scrollableTextbox(text=query, height=500, border=True)
+                stx.scrollableTextbox(text=query, height=400, border=True)
 
     st.sidebar.title("Records")
     for idx, data in st.session_state.data:
