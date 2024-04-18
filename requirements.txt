@@ -1,3 +1,4 @@
+deep_translator
 langchain_together
 matplotlib
 numpy
