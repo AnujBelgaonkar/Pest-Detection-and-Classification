@@ -3,6 +3,7 @@ import pandas as pd
 import together
 import streamlit as st
 import numpy as np
+import tensorflow
 from PIL import Image
 from resources import get_model
 import streamlit_scrollable_textbox as stx
@@ -12,17 +13,16 @@ from deep_translator import GoogleTranslator
 import urllib.request
 load_dotenv(find_dotenv())
 
-
+st.set_page_config(layout='wide')
 def init_session_state():
     if 'data' not in st.session_state:
         st.session_state.data = []
     if 'counter' not in st.session_state:
         st.session_state.counter = 1
 
-os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
-#os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
+#os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
+os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
-path = "model.weights.h5"
 def add_data(data):
     st.session_state.data.append((st.session_state.counter, data))
     st.session_state.counter += 1
@@ -55,7 +55,7 @@ def preprocess(image) -> np:
     img_array = img_array / 255.0
     img_array = np.expand_dims(img_array, axis=0)
     return img_array  
-
+'''
 @st.cache_resource
 def load_model():
     if not os.path.isfile('model.h5'):
@@ -63,6 +63,10 @@ def load_model():
     model = get_model()
     model.load_weights('model.h5')
     return model
+'''
+@st.cache_resource
+def load_model():
+    return  tensorflow.keras.models.load_model('custom_model26.keras')
 
 def predict_insect(model,image):
     x = model.predict(image)
@@ -70,11 +74,11 @@ def predict_insect(model,image):
     confidence_score = x[0][result]
     return result,confidence_score
 
-st.set_page_config(layout='wide')
+
 
 def main():
     init_session_state()
-    model = load_model()
+    model = tensorflow.keras.models.load_model('custom_model26.keras')
     img_array = None
     names = {0: 'Ants', 1: 'Bees', 2: 'Bettle', 3: 'Cattterpillar', 4: 'Earthworms',
              5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'
