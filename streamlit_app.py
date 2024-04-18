@@ -9,6 +9,7 @@ import streamlit_scrollable_textbox as stx
 from dotenv import load_dotenv, find_dotenv
 from langchain_together import Together
 from deep_translator import GoogleTranslator
+import urllib.request
 load_dotenv(find_dotenv())
 
 
@@ -55,12 +56,25 @@ def preprocess(image) -> np:
     img_array = np.expand_dims(img_array, axis=0)
     return img_array  
 
+@st.cache_resource
+def load_model():
+    if not os.path.isfile('model.h5'):
+        urllib.request.urlretrieve('https://github.com/AnujBelgaonkar/Pest-Detection-and-Classification/blob/87099c5015010b4e33e36efa32931a93b9a10d91/model.weights.h5', 'model.h5')
+    model = get_model()
+    model.load_weights('model.h5')
+    return model
+
+def predict_insect(model,image):
+    x = model.predict(image)
+    result = np.argmax(x)
+    confidence_score = x[0][result]
+    return result,confidence_score
+
 st.set_page_config(layout='wide')
 
 def main():
     init_session_state()
-    model = get_model()
-    model.load_weights(path)
+    model = load_model()
     img_array = None
     names = {0: 'Ants', 1: 'Bees', 2: 'Bettle', 3: 'Cattterpillar', 4: 'Earthworms',
              5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'
@@ -99,9 +113,7 @@ def main():
         st.header("Prediction")
         if pressed:
             if img_array is not None:
-                x = model.predict(img_array)
-                result = np.argmax(x)
-                confidence_score = x[0][result]
+                result,confidence_score = predict_insect(model,img_array)
                 if confidence_score>0.5:
                     pest = names.get(result)
                     add_data(pest)
