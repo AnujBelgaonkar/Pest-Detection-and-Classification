@@ -8,7 +8,9 @@ from resources import get_model
 import streamlit_scrollable_textbox as stx
 from dotenv import load_dotenv, find_dotenv
 from langchain_together import Together
+from deep_translator import GoogleTranslator
 load_dotenv(find_dotenv())
+
 
 def init_session_state():
     if 'data' not in st.session_state:
@@ -19,7 +21,7 @@ def init_session_state():
 os.environ["TOGETHER_API_KEY"] = st.secrets["TOGETHER_API_KEY"]
 #os.environ["TOGETHER_API_KEY"] = os.getenv("TOGETHER_API_KEY")
 
-path = r"model.weights.h5"
+path = "model.weights.h5"
 def add_data(data):
     st.session_state.data.append((st.session_state.counter, data))
     st.session_state.counter += 1
@@ -27,18 +29,24 @@ def add_data(data):
 @st.cache_resource
 def get_llm():
     llm = Together(
-        model="META-LLAMA/LLAMA-2-7B-CHAT-HF",
-        max_tokens=900,
-        temperature=0.6,
-        top_p= 0.15
-
+        model="mistralai/Mixtral-8x22B-Instruct-v0.1",
+        max_tokens=1000,
+        temperature=0.7,
+        top_p= 0.7,
+        top_k=50,
+        repetition_penalty=1
     )
     return llm
 
-def prompt(text):
+def get_response(text):
     llm = get_llm()
-    output = llm.invoke(text)
-    return output
+    response = llm.invoke(text)
+    return response
+
+@st.cache_data
+def translate_to(word,end):
+    translator = GoogleTranslator(source='auto', target=end)
+    return translator.translate(word)
 
 def preprocess(image) -> np:
     image = image.resize((224, 224))
@@ -82,6 +90,7 @@ def main():
             st.write("<br>", unsafe_allow_html=True)  # Add some space above the button
             with button:
                  pressed = st.button("Predict", key='predict', use_container_width=False)
+            language = st.radio(label="Language", options=["English","Hindi"], index=0,horizontal=True)
     with empty:
         ##fill space
         st.write("     ")
@@ -92,13 +101,24 @@ def main():
             if img_array is not None:
                 x = model.predict(img_array)
                 result = np.argmax(x)
-                pest = names.get(result)
-                add_data(pest)
-                st.text(f"The predicted pest is {pest}")
-                text = f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use"
-                query = prompt(text)
-               # st.write(query)
-                stx.scrollableTextbox(text=query, height=500, border=True)
+                confidence_score = x[0][result]
+                if confidence_score>0.5:
+                    pest = names.get(result)
+                    add_data(pest)
+                    st.text(f"The predicted pest is {pest} with a confidence of {confidence_score}")
+                    text = [f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use?",
+                            " से निपटने के लिए सर्वोत्तम कृषि पद्धतियाँ क्या हैं? एक किसान को कौन सी पद्धतियों का उपयोग करना चाहिए?",
+                            " चा सामना करण्यासाठी सर्वोत्तम कृषी पद्धती कोणत्या आहेत. शेतकऱ्याने कोणत्या पद्धती वापरल्या पाहिजेत?"]
+                    if language == "English":
+                        st.write(text[0])
+                        stx.scrollableTextbox(get_response(text[0]),height= 300)
+                    elif language == "Hindi":
+                        kida = translate_to(pest,'hi')
+                        st.write(kida + text[1])
+                        stx.scrollableTextbox(get_response(kida + text[1]),height= 300)
+                # st.write(query)
+                else:
+                    st.write("The model is not confident enough to answer.")
 
     st.sidebar.title("Records")
     for idx, data in st.session_state.data:
