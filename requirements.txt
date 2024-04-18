@@ -10,3 +10,4 @@ streamlit
 streamlit_scrollable_textbox
 tensorflow
 together
+urllib
