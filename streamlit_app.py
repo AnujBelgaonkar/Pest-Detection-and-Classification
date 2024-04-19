@@ -8,6 +8,7 @@ import streamlit_scrollable_textbox as stx
 from dotenv import load_dotenv, find_dotenv
 from langchain_together import Together
 from deep_translator import GoogleTranslator
+from background import apply_background
 load_dotenv(find_dotenv())
 
 st.set_page_config(layout='wide')
@@ -36,6 +37,7 @@ def get_llm():
     )
     return llm
 
+
 def get_response(text):
     llm = get_llm()
     response = llm.invoke(text)
@@ -62,7 +64,7 @@ def predict_insect(model,image):
 
 @st.cache_resource
 def load_model():
-    return tensorflow.keras.models.load_model('custom_model26.keras')
+    return tensorflow.keras.models.load_model('final_model.keras')
 
 
 def main():
@@ -78,6 +80,7 @@ def main():
     image_column, empty ,prediction_column = st.columns((2,1,2), gap='large')
     predict = st.container()
     button = st.container()
+    apply_background()
     with header:
         st.write(
     """
@@ -112,7 +115,7 @@ def main():
                     confidence_score = round(confidence_score,2)
                     pest = names.get(result)
                     add_data(pest)
-                    st.text(f"The predicted pest is {pest} with a confidence of {confidence_score}")
+                    st.write(f"The predicted pest is {pest} with a confidence of {confidence_score}")
                     text = [f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use?",
                             " से निपटने के लिए सर्वोत्तम कृषि पद्धतियाँ क्या हैं? एक किसान को कौन सी पद्धतियों का उपयोग करना चाहिए?",
                             " चा सामना करण्यासाठी सर्वोत्तम कृषी पद्धती कोणत्या आहेत. शेतकऱ्याने कोणत्या पद्धती वापरल्या पाहिजेत?"]
@@ -122,7 +125,7 @@ def main():
                     elif language == "Hindi":
                         kida = translate_to(pest,'hi')
                         st.write(kida + text[1])
-                        stx.scrollableTextbox(get_response(kida + text[1]),height= 300)
+                        stx.scrollableTextbox(get_response(kida + text[1]),height= 300,fontFamily="Rubik")
                 else:
                     st.write("The model is not confident enough to answer.")
 
