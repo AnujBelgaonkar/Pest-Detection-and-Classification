@@ -69,9 +69,10 @@ def main():
     init_session_state()
     model = load_model()
     img_array = None
-    names = {0: 'Ants', 1: 'Bees', 2: 'Bettle', 3: 'Cattterpillar', 4: 'Earthworms',
-             5: 'Earwig', 6: 'Grasshopper', 7: 'Moth', 8: 'Slug', 9: 'Snail', 10: 'Wasp', 11: 'Weevil'
-             }
+    names = {0: 'Africanized Honey Bees (Killer Bees)', 1: 'Aphids', 2: 'Armyworms', 3: 'Brown Marmorated Stink Bugs', 4: 'Cabbage Loppers',
+             5: 'Citrus Canker', 6: 'Colorado Potato Beetles', 7: 'Corn Bores', 8: 'Corn Earworms', 9: 'Fall Armyworms', 10: 'Fruit Flies', 11: 'Spider Mites'
+             , 12: 'Thrips',13:'Tomato Hornworms',14:'Western Corm Rootworms',15:'Ants',16:'Bees',17:'Beetle',18:'Catterpillar'
+             ,19:'Earthworms',20:'Earwig',21:'Grasshopper',22:'Moth',23:'Slug',24:'Snail',25:'Wasp',26:'Weevil'}
 
     header = st.container()
     image_column, empty ,prediction_column = st.columns((2,1,2), gap='large')

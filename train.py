@@ -6,60 +6,117 @@ import matplotlib.pyplot as plt
 import random
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, Conv2D, MaxPooling2D, Average
-from tensorflow.keras.layers import Flatten,AveragePooling2D,AveragePooling2D,Activation,Attention,Multiply,SeparableConv2D
-from tensorflow.keras.callbacks import Callback, EarlyStopping,ModelCheckpoint
+from tensorflow.keras.layers import Dense, Dropout, Input, BatchNormalization, Conv2D, MaxPooling2D, Average, Concatenate, Add, Activation
+from tensorflow.keras.layers import Flatten,AveragePooling2D,AveragePooling2D,SeparableConv2D, GlobalAveragePooling2D, ZeroPadding2D
+from tensorflow.keras.callbacks import Callback, EarlyStopping,ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras import Model
 from tensorflow.keras.preprocessing.image import load_img
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import Model,load_model
-from tensorflow.keras import layers
-from tensorflow.keras.layers import RandomRotation,RandomFlip,RandomZoom,RandomContrast
+from keras.models import Model,load_model
+from tensorflow.keras import layers 
+from tensorflow.keras.layers import RandomRotation,RandomFlip,RandomZoom,RandomContrast,RandomBrightness,RandomTranslation
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras import activations
-from tensorflow.keras import regularizers
+from keras import activations
+from keras import regularizers
+import math
 
 
 train_datagen= ImageDataGenerator(
-    preprocessing_function=tf.keras.applications.efficientnet_v2.preprocess_input,
-   validation_split = 0.2,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode='nearest',
+    validation_split = 0.2,
     rescale=1./255
 )
 
+datagen_val = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1./255, 
+    validation_split=0.2) 
+
+
 train_images = train_datagen.flow_from_directory(
-    "/kaggle/input/agricultural-pests-image-dataset",
+    "/kaggle/input/insects/New Dataset",
     target_size=(224,224),
     color_mode='rgb',
     class_mode='categorical',
     batch_size=32,
+    shuffle = True,
     seed=42,
     subset = 'training',
 )
 
 
-val_images = train_datagen.flow_from_directory(
-   "/kaggle/input/agricultural-pests-image-dataset",
+val_images = datagen_val.flow_from_directory(
+   "//kaggle/input/insects/New Dataset",
     target_size=(224,224),
+    seed = 42,
     color_mode='rgb',
     class_mode='categorical',
     batch_size=32,
-    shuffle=True,
+    shuffle=False,
     subset = 'validation'
 )
 
-checkpoint_path = "custom_codel.weights.h5"
-checkpoint_callback = ModelCheckpoint(checkpoint_path, save_weights_only=True, monitor="val_accuracy", save_best_only=True)
 
-early_stopping = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1, mode='min', restore_best_weights=True)
 
-augment = Sequential([
-    RandomFlip("horizontal"),            # Random horizontal flipping
-    RandomRotation(factor=0.2),          # Random rotation up to 20 degrees
-    RandomZoom(height_factor=0.1, width_factor=0.1),  # Random zooming up to 10%
-    RandomContrast(factor=0.1),          # Random contrast adjustment up to 10%
-])
+# Define the learning rate reduction callback
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.00001, verbose=1)
+def inception_module(layer_in, f1, f2, f3, f4):
+
+    branch1 = Conv2D(f1, (1,1), padding='same', activation='relu')(layer_in)
+    
+    branch2 = Conv2D(f2, (1,1), padding='same', activation='relu')(layer_in)
+    branch21 = Conv2D(f2, (3,1), padding='same', activation='relu')(branch2)
+    branch22 = Conv2D(f2, (1,3), padding='same', activation='relu')(branch2)
+    
+    branch3 = Conv2D(f2, (1,1), padding='same', activation='relu')(layer_in)
+    branch3 = Conv2D(f3, (3,3), padding='same', activation='relu')(branch3)
+    branch31 = Conv2D(f3, (3,1), padding='same', activation='relu')(branch3)
+    branch32 = Conv2D(f3, (1,3), padding='same', activation='relu')(branch3)
+    
+    pool = AveragePooling2D((3,3), strides=(1,1), padding='same')(layer_in)
+    pool = Conv2D(f4, (1,1), padding='same', activation='relu')(pool)
+    
+    x = Concatenate(axis=3)([branch1, branch21, branch22, branch31, branch32, pool])
+    
+    return x
+
+
+def reduction(layer_in, f1,f2):
+    branch1 = Conv2D(f1,(1,1),padding = 'same', activation = 'relu')(layer_in)
+    branch1 = Conv2D(f1, (3,3), padding = 'same', activation = 'relu')(branch1)
+    branch1 = Conv2D(f1,(3,3),padding = 'same', activation = 'relu')(branch1)
+    
+    branch2 = Conv2D(f2,(3,3),padding = 'same', activation = 'relu')(layer_in)
+    
+    branch3 = MaxPooling2D((3,3), strides = (1,1), padding = 'same')(layer_in)
+
+    x = Concatenate(axis = 3)([branch1,branch2,branch3])
+    
+    return x
+
+
+def resnet(layer_in, f1,f2,f3):
+    branch1 = Conv2D(f1,(1,1),padding = 'same', activation = 'relu')(layer_in)
+    branch1 = Conv2D(f1,(1,3),padding = 'same', activation = 'relu')(branch1)
+    branch1 = Conv2D(f1,(3,1), padding = 'same', activation = 'relu')(branch1)
+    
+    branch2 = Conv2D(f2,(1,1), padding = 'same', activation = 'relu')(layer_in)
+    
+    combine = Concatenate(axis = 3)([branch1,branch2])
+    combine = Conv2D(f3,(1,1),padding = 'same',activation = 'relu')(combine)
+    
+    x = Add()([combine,layer_in])
+    
+    return x
+
 
 def get_model() -> Model:
     input_shape = [224,224,3]
@@ -68,35 +125,32 @@ def get_model() -> Model:
     x = RandomRotation(0.2)(x)
     x = RandomZoom(0.1)(x)
     x = RandomContrast(0.1)(x)
-    x = Conv2D(filters = 64, kernel_size = 2, activation = 'tanh')(x)
-    x = Activation(activations.relu)(x)
-    x = MaxPooling2D(pool_size = 2, strides = 2)(x)
-    x = Conv2D(filters = 128, kernel_size = 2, activation = 'tanh')(x)
-    x = Activation(activations.relu)(x)
-    x = MaxPooling2D(pool_size = 2, strides = 2)(x)
-    x = MaxPooling2D(pool_size = 2, strides = 2)(x)
-    y = Conv2D(filters = 256, kernel_size = 2, activation = 'relu')(x)
-    y = MaxPooling2D(pool_size = 2, strides = 2)(y)
-    y = MaxPooling2D(pool_size = 2, strides = 2)(y)
-    y = BatchNormalization()(y)
-    z = Conv2D(filters = 256, kernel_size = 2, activation = 'relu')(x)
-    z = MaxPooling2D(pool_size = 2, strides = 2)(z)
-    z = MaxPooling2D(pool_size = 2, strides = 2)(z)
-    z = BatchNormalization()(z)
-    a = tf.keras.layers.Multiply()([y, z])
-    b = Flatten()(a)
-    b = Dense(units = 1000, activation = 'tanh',kernel_regularizer=regularizers.l2(0.001))(b)
-    b = Activation(activations.relu)(b)
-    b = Dropout(0.7)(b)
-    b = Dense(units = 200, activation = 'tanh',kernel_regularizer=regularizers.l2(0.001))(b)
-    b = Activation(activations.relu)(b)
-    b = Dropout(0.7)(b)
-    output = Dense(units = 12,activation='softmax')(b)
+    #x = RandomBrightness(0.2)(x)
+    x = Conv2D(filters = 16, kernel_size = (3,3), padding = 'valid', strides = (2,2))(x)
+    x = BatchNormalization(axis = 3)(x)
+    x = Activation(activation='relu')(x)
+    x = Conv2D(filters = 16, kernel_size = (3,3), padding = 'valid', strides = (2,2))(x)
+    x = BatchNormalization(axis = 3)(x)
+    x = Activation(activation='relu')(x)
+    x = MaxPooling2D(pool_size = 3 , strides=2)(x)
+    x = inception_module(x ,64, 96, 128, 16)
+    x = resnet(x,64,96,528)
+    x = MaxPooling2D(pool_size = 3, strides = 2)(x)
+    x = inception_module(x ,64, 96, 128, 16)
+    x = reduction(x, 256, 160)
+    x = MaxPooling2D(pool_size = 3, strides = 2, padding = 'same')(x)
+    b = Dropout(0.25)(x)
+    b = Flatten()(b)
+    b = Dense(units = 500, activation = 'relu')(b)
+    b = Dropout(0.4)(b)
+    b = Dense(units = 100, activation = 'relu')(b)
+    b = Dropout(0.4)(b)
+    output = Dense(units = 27,activation='softmax')(b)
 
 
     model_custom = Model(inputs=inputs, outputs=output)
-    model_custom.compile(optimizer = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999),loss = 'categorical_crossentropy',
-                         metrics = ['accuracy',keras.metrics.Recall(),keras.metrics.Precision()])
+    model_custom.compile(optimizer = Adam(learning_rate=0.0001),loss = 'categorical_crossentropy',
+                         metrics = ['accuracy'])
     model_custom.build([ None, 224, 224, 3])
     return model_custom
 
@@ -104,12 +158,9 @@ model_custom = get_model()
 model_custom.summary()
 
 from tensorflow.keras.utils import plot_model
-plot_model(model_custom,show_layer_activations=True)
+plot_model(model_custom,to_file='model_plot33.png',show_layer_activations=True)
 
-history_custom = model_custom.fit( train_images,
-                    validation_data=val_images,
-                    epochs = 110,
-                    callbacks=[checkpoint_callback])
+history = model_custom.fit(train_images, validation_data=val_images, epochs=100, callbacks=[reduce_lr, early_stopping])
 
 plt.figure(figsize=(15, 10))
 plt.plot(history_custom.history['loss'], label='Training Loss')
@@ -131,5 +182,5 @@ plt.legend()
 plt.grid()
 plt.show()
 
-model.save_weights('model.weights.h5')
+model_custom.save('model_custom.keras')
 
