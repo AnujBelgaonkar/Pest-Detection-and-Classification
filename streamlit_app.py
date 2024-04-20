@@ -114,18 +114,22 @@ def main():
                 if confidence_score>0.5:
                     confidence_score = round(confidence_score,2)
                     pest = names.get(result)
-                    add_data(pest)
                     st.write(f"The predicted pest is {pest} with a confidence of {confidence_score}")
-                    text = [f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use?",
-                            " से निपटने के लिए सर्वोत्तम कृषि पद्धतियाँ क्या हैं? एक किसान को कौन सी पद्धतियों का उपयोग करना चाहिए?",
-                            " चा सामना करण्यासाठी सर्वोत्तम कृषी पद्धती कोणत्या आहेत. शेतकऱ्याने कोणत्या पद्धती वापरल्या पाहिजेत?"]
-                    if language == "English":
-                        st.write(text[0])
-                        stx.scrollableTextbox(get_response(text[0]),height= 300)
-                    elif language == "Hindi":
-                        kida = translate_to(pest,'hi')
-                        st.write(kida + text[1])
-                        stx.scrollableTextbox(get_response(kida + text[1]),height= 300,fontFamily="Rubik")
+                    try:
+                        text = [f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use?",
+                                " से निपटने के लिए सर्वोत्तम कृषि पद्धतियाँ क्या हैं? एक किसान को कौन सी पद्धतियों का उपयोग करना चाहिए?",
+                                " चा सामना करण्यासाठी सर्वोत्तम कृषी पद्धती कोणत्या आहेत. शेतकऱ्याने कोणत्या पद्धती वापरल्या पाहिजेत?"]
+                        if language == "English":
+                            st.write(text[0])
+                            stx.scrollableTextbox(get_response(text[0]),height= 300)
+                            add_data(pest)
+                        elif language == "Hindi":
+                            kida = translate_to(pest,'hi')
+                            st.write(kida + text[1])
+                            stx.scrollableTextbox(get_response(kida + text[1]),height= 300)
+                            add_data(pest)
+                    except Exception:
+                        st.warning("Error occured, please try again", icon = "⚠️")
                 else:
                     st.write("The model is not confident enough to answer.")
 
