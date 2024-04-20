@@ -111,7 +111,7 @@ def main():
         if pressed:
             if img_array is not None:
                 result,confidence_score = predict_insect(model,img_array)
-                if confidence_score>0.5:
+                if confidence_score>0.7:
                     confidence_score = round(confidence_score,2)
                     pest = names.get(result)
                     st.write(f"The predicted pest is {pest} with a confidence of {confidence_score}")
