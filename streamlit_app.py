@@ -114,7 +114,7 @@ def main():
                 if confidence_score>0.7:
                     confidence_score = round(confidence_score,2)
                     pest = names.get(result)
-                    st.write(f"The predicted pest is {pest} with a confidence of {confidence_score}")
+                    st.write(f"The predicted pest is {pest}")
                     try:
                         text = [f"What are the best agricultural practices to deal with {pest}. What practicies should a farmer use?",
                                 " से निपटने के लिए सर्वोत्तम कृषि पद्धतियाँ क्या हैं? एक किसान को कौन सी पद्धतियों का उपयोग करना चाहिए?",
