@@ -25,6 +25,6 @@ def apply_background():
     right: 2rem;
     }}
 
-    """
+     """
     st.markdown(page_bg_img, unsafe_allow_html=True)
     
