@@ -41,7 +41,7 @@ datagen_val = tf.keras.preprocessing.image.ImageDataGenerator(
 
 
 train_images = train_datagen.flow_from_directory(
-    "/kaggle/input/insects/New Dataset",
+    "Dataset",
     target_size=(224,224),
     color_mode='rgb',
     class_mode='categorical',
@@ -53,7 +53,7 @@ train_images = train_datagen.flow_from_directory(
 
 
 val_images = datagen_val.flow_from_directory(
-   "//kaggle/input/insects/New Dataset",
+   "Dataset",
     target_size=(224,224),
     seed = 42,
     color_mode='rgb',
